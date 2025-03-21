@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Luxer One - Locker Calculator</title>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Inter:400,600&display=swap">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <style>
+    body {
+      font-family: 'Inter', sans-serif;
+      background: #f9f9f9;
+      color: #333;
+      max-width: 900px;
+      margin: auto;
+      padding: 20px;
+    }
+    h1 { color: #2c3e50; }
+    .section {
+      background: #fff;
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      margin-bottom: 30px;
+    }
+    .form-group {
+      margin-bottom: 15px;
+    }
+    label {
+      font-weight: 600;
+      display: block;
+      margin-bottom: 5px;
+    }
+    input, select {
+      width: 100%;
+      padding: 10px;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+    }
+    button {
+      padding: 12px 20px;
+      border: none;
+      background-color: #3498db;
+      color: white;
+      font-weight: 600;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #2980b9;
+    }
+    .callout {
+      background: #e8f4fd;
+      padding: 20px;
+      border-radius: 12px;
+      font-size: 1.5em;
+      margin-top: 20px;
+      text-align: center;
+      color: #2c3e50;
+    }
+    .highlight { font-weight: 700; color: #27ae60; }
+    .download {
+      background-color: #27ae60;
+      margin-top: 20px;
+    }
+    .download:hover { background-color: #219150; }
+    .tooltip {
+      cursor: help;
+      border-bottom: 1px dotted #555;
+      color: #555;
+      position: relative;
+      display: inline-block;
+    }
+    .tooltip .tooltiptext {
+      visibility: hidden;
+      width: 250px;
+      background-color: #555;
+      color: #fff;
+      text-align: center;
+      border-radius: 6px;
+      padding: 8px;
+      position: absolute;
+      z-index: 1;
+      bottom: 125%;
+      left: 50%;
+      margin-left: -125px;
+      opacity: 0;
+      transition: opacity 0.3s;
+      font-weight: normal;
+      font-size: 0.9em;
+    }
+    .tooltip:hover .tooltiptext {
+      visibility: visible;
+      opacity: 1;
+    }
+    #error-message {
+      color: #e74c3c;
+      font-weight: 600;
+      margin-top: 10px;
+      display: none;
+    }
+    .locker-link {
+      display: block;
+      text-align: center;
+      margin: 20px 0;
+      font-weight: 600;
+    }
+    .locker-link a {
+      color: #3498db;
+      text-decoration: none;
+      padding: 10px 15px;
+      border: 2px solid #3498db;
+      border-radius: 6px;
+      transition: all 0.3s;
+    }
+    .locker-link a:hover {
+      background-color: #3498db;
+      color: white;
+    }
+    .info-box {
+      background-color: #fef9e7;
+      border-left: 4px solid #f39c12;
+      padding: 15px;
+      margin-top: 20px;
+      border-radius: 0 6px 6px 0;
+    }
+    .info-box h4 {
+      margin-top: 0;
+      color: #f39c12;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>📦 Luxer One Locker Calculator</h1>
+  <p>Quickly estimate the locker compartments your community needs based on industry best practices.</p>
+
+  <div class="section">
+    <h2>Step 1: Community Info</h2>
+
+    <div class="form-group">
+      <label>Number of Apartment Units: <span class="tooltip">ⓘ<span class="tooltiptext">Enter the total number of apartment units in your community</span></span></label>
+      <input type="number" id="units" value="200" min="1">
+    </div>
+
+    <div class="form-group">
+      <label>Property Type: <span class="tooltip">ⓘ<span class="tooltiptext">This determines the average number of packages received per unit per week</span></span></label>
+      <select id="propertyType">
+        <option value="1">Low Volume - Avg 1 Package/Week</option>
+        <option value="1.3" selected>Industry Average - Avg 1.3 Packages/Week</option>
+        <option value="1.5">Moderate Volume - Avg 1.5 Packages/Week</option>
+        <option value="2">High Volume - Avg 2 Packages/Week</option>
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label>Average Days a Package Stays: <span class="tooltip">ⓘ<span class="tooltiptext">How long packages typically remain in lockers before pickup</span></span></label>
+      <select id="dwellTime">
+        <option value="1.8" selected>1.8 Days (Industry Average)</option>
+        <option value="2">2 Days</option>
+        <option value="2.5">2.5 Days (Slower Pickup)</option>
+      </select>
+    </div>
+
+    <div id="error-message"></div>
+    <button onclick="calculateLockers()">🔎 Calculate Lockers</button>
+  </div>
+
+  <div class="section">
+    <h2>Step 2: Your Locker Recommendation</h2>
+
+    <div class="callout">
+      🏆 Recommended Lockers Needed: <span class="highlight" id="lockerCount">-</span>
+    </div>
+
+    <div class="info-box">
+      <h4>How to Configure Your Locker System</h4>
+      <p>Start with one Main Unit, then add additional locker towers to reach your total recommended locker count. Remember that oversized lockers provide a package capacity of 15 each.</p>
+    </div>
+
+    <button class="download" onclick="downloadReport()">📥 Download My Locker Report</button>
+  </div>
+
+  <div class="section">
+    <h2>Step 3: View Locker Selections</h2>
+    <p>Now that you know how many lockers you need, explore our available locker options to find the perfect fit for your community.</p>
+    
+    <div class="locker-link">
+      <a href="https://drive.google.com/file/d/1b1yXoYeb-QvICAVbYf-NE9DRW9YvU344/view" target="_blank">👉 View Available Locker Selections 👈</a>
+    </div>
+    
+    <div class="info-box">
+      <h4>Need Help Selecting?</h4>
+      <p>Our team of package management experts can help you choose the right configuration for your specific needs. Contact us for a personalized consultation.</p>
+    </div>
+  </div>
+
+  <script>
+    // Constants
+    const peakBuffer = 0.2;  // Fixed 20% peak buffer (not customer-facing)
+    const minimumLockers = 15; // Minimum number of lockers (main unit)
+
+    function calculateLockers() {
+      // Get and validate inputs
+      const unitsInput = document.getElementById('units');
+      const units = parseInt(unitsInput.value);
+      const errorMsg = document.getElementById('error-message');
+      
+      if (!units || units < 1) {
+        errorMsg.textContent = "Please enter a valid number of units (minimum 1)";
+        errorMsg.style.display = "block";
+        return;
+      }
+      
+      errorMsg.style.display = "none";
+      
+      const packages = parseFloat(document.getElementById('propertyType').value);
+      const dwell = parseFloat(document.getElementById('dwellTime').value);
+
+      // Calculate locker needs
+      const dailyVolume = (units * packages) / 7;
+      const baseStorage = dailyVolume * dwell;
+      let lockers = Math.ceil(baseStorage * (1 + peakBuffer));
+      
+      // Ensure minimum of 15 lockers
+      lockers = Math.max(lockers, minimumLockers);
+
+      // Update UI with results
+      document.getElementById('lockerCount').textContent = lockers;
+    }
+
+    function downloadReport() {
+      const { jsPDF } = window.jspdf;
+      
+      const lockers = document.getElementById('lockerCount').textContent;
+      if (lockers === "-") {
+        alert("Please calculate locker needs before downloading the report");
+        return;
+      }
+      
+      const units = document.getElementById('units').value;
+      const propertyType = document.getElementById('propertyType');
+      const propertyTypeText = propertyType.options[propertyType.selectedIndex].text;
+      const dwellTime = document.getElementById('dwellTime');
+      const dwellTimeText = dwellTime.options[dwellTime.selectedIndex].text;
+      const currentDate = new Date().toLocaleDateString();
+
+      // Create PDF document
+      const doc = new jsPDF();
+      
+      // Add content to PDF
+      doc.setFontSize(22);
+      doc.text("Luxer One Locker Report", 105, 20, { align: 'center' });
+      
+      doc.setFontSize(12);
+      doc.text(`Generated on: ${currentDate}`, 20, 40);
+      
+      // Community information
+      doc.setFontSize(16);
+      doc.text("Community Information", 20, 55);
+      doc.setFontSize(12);
+      doc.text(`Number of Apartment Units: ${units}`, 20, 65);
+      doc.text(`Property Type: ${propertyTypeText}`, 20, 75);
+      doc.text(`Average Package Dwell Time: ${dwellTimeText}`, 20, 85);
+      
+      // Recommendation
+      doc.setFontSize(16);
+      doc.text("Locker Recommendation", 20, 105);
+      doc.setFontSize(14);
+      doc.text(`Recommended Lockers: ${lockers}`, 20, 115);
+      
+      // Configuration note
+      doc.setFontSize(12);
+      doc.text("Configuration Note:", 20, 135);
+      doc.text("Start with one Main Unit, then add additional locker towers to reach", 20, 145);
+      doc.text("your total recommended locker count. Remember that oversized lockers", 20, 155);
+      doc.text("provide a package capacity of 15 each.", 20, 165);
+      
+      // Contact info
+      doc.setFontSize(10);
+      doc.text("For more information about Luxer One package lockers, visit luxerone.com", 20, 190);
+      doc.text("To view our available locker selections, visit:", 20, 200);
+      doc.setTextColor(0, 0, 255);
+      doc.text("https://drive.google.com/file/d/1b1yXoYeb-QvICAVbYf-NE9DRW9YvU344/view", 20, 210);
+      
+      // Save the PDF
+      doc.save('luxer-locker-report.pdf');
+    }
+
+    // Initialize calculations on page load
+    document.addEventListener('DOMContentLoaded', function() {
+      calculateLockers();
+    });
+  </script>
+</body>
+</html>
